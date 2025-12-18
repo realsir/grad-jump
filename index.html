@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>./ GRAD JUMP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    :root {
+      --bg-color: #050608;
+      --accent: #00ff9c;
+      --accent-soft: #00c27a;
+      --danger: #ff4b6a;
+      --text-main: #f4f4f4;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: "PixelGrad", system-ui, sans-serif;
+      overflow: hidden;
+      padding: 0;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        radial-gradient(circle at 0 0, rgba(0, 255, 156, 0.13) 0, transparent 55%),
+        radial-gradient(circle at 100% 100%, rgba(0, 255, 156, 0.08) 0, transparent 60%);
+      mix-blend-mode: screen;
+      opacity: 0.7;
+      z-index: -2;
+    }
+
+    .ascii-bg {
+      position: fixed;
+      inset: 0;
+      z-index: -3;
+      color: rgba(0, 255, 156, 0.18);
+      font-size: 10px;
+      line-height: 10px;
+      white-space: pre;
+      overflow: hidden;
+      pointer-events: none;
+      opacity: 0.55;
+    }
+
+    @font-face {
+      font-family: "PixelGrad";
+      src: local("Courier New");
+    }
+
+    .pixel-text {
+      font-family: "PixelGrad", monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      text-shadow:
+        0 0 1px #000,
+        0 0 2px #000,
+        2px 2px 0 #000;
+    }
+
+    .pixel-title { font-size: 32px; letter-spacing: 0.2em; }
+
+    .pixel-btn {
+      font-family: "PixelGrad", monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-size: 16px;
+    }
+
+    .shell {
+      width: min(720px, 100vw - 24px);
+      max-width: 720px;
+      max-height: calc(100vh - 32px);
+      background: radial-gradient(circle at 0 0, #172437, #05060a 60%);
+      border-radius: 18px;
+      padding: 22px 22px 24px;
+      box-shadow:
+        0 0 0 2px rgba(0, 255, 156, 0.2),
+        0 22px 45px rgba(0, 0, 0, 0.85);
+      position: relative;
+      overflow: hidden;
+      margin: 16px auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .shell::before {
+      content: "./ GRAD";
+      position: absolute;
+      top: 8px;
+      left: 14px;
+      font-size: 10px;
+      opacity: 0.4;
+      color: var(--accent);
+      text-shadow: 0 0 4px rgba(0, 255, 156, 0.7);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .game-title { margin-bottom: 4px; }
+
+    .game-subtitle {
+      font-size: 12px;
+      color: #d4d6e0;
+      letter-spacing: 0.09em;
+    }
+    .game-subtitle span.symbol { color: var(--accent); }
+
+    .desc {
+      text-align: center;
+      font-size: 12px;
+      color: #b4b8c9;
+      margin-bottom: 10px;
+    }
+    .desc strong { color: var(--accent); }
+
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 10px;
+      color: #a3a7b8;
+    }
+    .hud span.label { opacity: 0.7; }
+    .hud span.value { color: var(--accent); }
+
+    canvas {
+      background: radial-gradient(circle at 50% 110%, #04040b, #05060c 55%, #020308);
+      display: block;
+      margin: 0 auto;
+      border-radius: 10px;
+      box-shadow:
+        inset 0 0 0 1px rgba(0, 255, 156, 0.16),
+        inset 0 0 28px rgba(0, 0, 0, 0.9);
+    }
+
+    .controls {
+      margin-top: 8px;
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      cursor: pointer;
+      border: 1px solid var(--accent);
+      background: linear-gradient(135deg, #071e13, #063121);
+      color: var(--accent);
+      padding: 8px 20px;
+      border-radius: 999px;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+      box-shadow:
+        0 0 0 1px rgba(0, 255, 156, 0.2),
+        0 5px 15px rgba(0, 0, 0, 0.7);
+    }
+
+    .btn:hover {
+      background: linear-gradient(135deg, #0c3c26, #075733);
+      transform: translateY(-1px);
+      box-shadow:
+        0 0 0 1px rgba(0, 255, 156, 0.3),
+        0 9px 22px rgba(0, 0, 0, 0.85);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+      box-shadow:
+        0 0 0 1px rgba(0, 255, 156, 0.25),
+        0 3px 8px rgba(0, 0, 0, 0.85);
+    }
+
+    .btn.secondary {
+      border-color: #7d8194;
+      color: #e0e2f2;
+      background: linear-gradient(135deg, #101322, #151931);
+      box-shadow:
+        0 0 0 1px rgba(125, 129, 148, 0.4),
+        0 5px 16px rgba(0, 0, 0, 0.75);
+    }
+    .btn.secondary:hover {
+      background: linear-gradient(135deg, #181d36, #20264a);
+    }
+
+    .hint {
+      margin-top: 6px;
+      text-align: center;
+      font-size: 10px;
+      color: #8185a0;
+    }
+
+    .hint span.key {
+      padding: 1px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: #d6d7e6;
+      font-size: 9px;
+      background: rgba(10, 12, 22, 0.9);
+      margin: 0 2px;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      background: radial-gradient(circle at 50% 40%, rgba(12, 16, 27, 0.95), rgba(3, 4, 9, 0.98));
+    }
+    .overlay.visible { display: flex; }
+
+    .overlay-panel {
+      width: 90%;
+      max-width: 320px;
+      background: #070814;
+      border-radius: 14px;
+      padding: 18px 16px 16px;
+      box-shadow:
+        0 0 0 1px rgba(0, 255, 156, 0.18),
+        0 18px 40px rgba(0, 0, 0, 0.95);
+      text-align: center;
+    }
+
+    .overlay-title {
+      font-size: 18px;
+      margin-bottom: 8px;
+      color: var(--accent);
+      text-shadow:
+        0 0 10px rgba(0, 255, 156, 0.8),
+        0 0 4px rgba(0, 0, 0, 0.9);
+    }
+
+    .overlay-score {
+      font-size: 13px;
+      color: #c9ccde;
+      margin-bottom: 12px;
+    }
+    .overlay-score span { color: var(--accent-soft); }
+
+    .overlay-hint {
+      font-size: 10px;
+      color: #8488a0;
+      margin-bottom: 12px;
+    }
+
+    .overlay-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 760px) {
+      .pixel-title { font-size: 26px; }
+      canvas { width: 100% !important; height: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="ascii-bg" id="asciiBackground"></div>
+
+  <div class="shell">
+    <div class="header">
+      <h1 class="game-title pixel-text pixel-title">./ GRAD JUMP</h1>
+      <p class="game-subtitle">
+
+    </div>
+
+    <p class="desc">
+      Your character is <strong>./</strong>. Leap from platform to platform, climb as high as you can,
+      collect <strong>+</strong> and avoid <strong>-</strong>. Jump on enemies from above to destroy them. Some platforms will break after you land on them.
+    </p>
+
+    <div class="hud">
+      <div>
+        <span class="label">score</span>:
+        <span class="value" id="scoreDisplay">0</span>
+      </div>
+      <div>
+        <span class="label">state</span>:
+        <span class="value" id="stateDisplay">idle</span>
+      </div>
+    </div>
+
+    <canvas id="gameCanvas" width="640" height="420"></canvas>
+
+    <div class="controls">
+      <button class="btn pixel-btn" id="startBtn">./ START</button>
+      <button class="btn secondary pixel-btn" id="restartBtn" style="display:none;">./ RESTART</button>
+    </div>
+
+
+
+    <div class="overlay" id="gameOverOverlay">
+      <div class="overlay-panel">
+        <div class="overlay-title pixel-text">./ GAME OVER</div>
+        <div class="overlay-score">
+          You collected <span id="finalScore">0</span> points.
+        </div>
+        <div class="overlay-hint">
+          Falling off the platforms or touching <span style="color: var(--danger);">- enemy</span> from the side ends the run.
+        </div>
+        <div class="overlay-buttons">
+          <button class="btn pixel-btn" id="overlayRestartBtn">./ RESTART</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function generateAsciiBackground() {
+      const container = document.getElementById("asciiBackground");
+      const cols = Math.ceil(window.innerWidth / 10);
+      const rows = Math.ceil(window.innerHeight / 10);
+      let text = "";
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) text += "./";
+        text += "\n";
+      }
+      container.textContent = text;
+    })();
+
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const scoreDisplay = document.getElementById("scoreDisplay");
+    const stateDisplay = document.getElementById("stateDisplay");
+    const startBtn = document.getElementById("startBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const overlay = document.getElementById("gameOverOverlay");
+    const overlayRestartBtn = document.getElementById("overlayRestartBtn");
+    const finalScoreEl = document.getElementById("finalScore");
+
+    const W = canvas.width;
+    const H = canvas.height;
+
+    const player = {
+      x: W / 2 - 13,
+      y: H - 80,
+      width: 26,
+      height: 18,
+      vx: 0,
+      vy: 0,
+      moveSpeed: 3.2,
+      jumpSpeed: -9.5,
+      gravity: 0.33
+    };
+
+    let platforms = [];
+    let enemies = [];
+    let points = [];
+    let keys = {};
+
+    let score = 0;
+    let gameState = "idle";
+
+    const scrollThreshold = H * 0.4;
+
+    function setGameState(s) {
+      gameState = s;
+      stateDisplay.textContent = s;
+    }
+
+    function resetGame() {
+      score = 0;
+      platforms = [];
+      enemies = [];
+      points = [];
+
+      player.x = W / 2 - 13;
+      player.y = H - 80;
+      player.vx = 0;
+      player.vy = 0;
+
+      const baseCount = 9;
+      const spacingY = 60; 
+      let currentY = H - 40;
+      for (let i = 0; i < baseCount; i++) {
+        const px = 30 + Math.random() * (W - 120);
+        const py = currentY - i * spacingY;
+        addPlatform(px, py);
+      }
+
+      platforms.push({
+        x: W / 2 - 40,
+        y: H - 20,
+        width: 80,
+        height: 10,
+        type: "base",
+        breakTimer: 0,
+        breaking: false
+      });
+
+      setGameState("running");
+      overlay.classList.remove("visible");
+      restartBtn.style.display = "inline-block";
+    }
+
+    function addPlatform(x, y) {
+      const width = 110 + Math.random() * 80;
+      let type = "normal";
+      if (Math.random() < 0.2) type = "break";
+
+      platforms.push({
+        x,
+        y,
+        width,
+        height: 10,
+        type,
+        breakTimer: 0,
+        breaking: false
+      });
+
+      if (Math.random() < 0.4) {
+        points.push({
+          x: x + width / 2 - 4,
+          y: y - 14,
+          collected: false
+        });
+      }
+
+      if (y < H - 100 && Math.random() < 0.25) {
+        enemies.push({
+          x: x + width / 2,
+          y: y - 8,
+          dir: Math.random() < 0.5 ? -1 : 1,
+          speed: 0.7 + Math.random() * 0.8,
+          range: 30 + Math.random() * 30,
+          baseX: x + width / 2,
+          dead: false
+        });
+      }
+    }
+
+    function update(delta) {
+      if (gameState !== "running") return;
+
+      if (keys["ArrowLeft"] || keys["a"] || keys["A"]) {
+        player.vx = -player.moveSpeed;
+      } else if (keys["ArrowRight"] || keys["d"] || keys["D"]) {
+        player.vx = player.moveSpeed;
+      } else {
+        player.vx *= 0.8;
+      }
+
+      player.vy += player.gravity;
+      player.x += player.vx;
+      player.y += player.vy;
+
+      if (player.x + player.width < 0) player.x = W;
+      if (player.x > W) player.x = -player.width;
+
+      if (player.vy > 0) {
+        for (const p of platforms) {
+          if (p.type === "deleted") continue;
+          const px1 = p.x;
+          const px2 = p.x + p.width;
+          const py1 = p.y;
+
+          const plx1 = player.x;
+          const plx2 = player.x + player.width;
+          const ply2 = player.y + player.height;
+
+          if (
+            plx2 > px1 &&
+            plx1 < px2 &&
+            ply2 > py1 &&
+            ply2 < py1 + 16 &&
+            player.vy > 0
+          ) {
+            player.y = py1 - player.height;
+            player.vy = player.jumpSpeed;
+
+            if (p.type === "break" && !p.breaking) {
+              p.breaking = true;
+              p.breakTimer = 0;
+            }
+          }
+        }
+      }
+
+      if (player.y < scrollThreshold) {
+        const diff = scrollThreshold - player.y;
+        player.y = scrollThreshold;
+        score += diff * 0.05;
+        for (const p of platforms) p.y += diff;
+        for (const e of enemies) e.y += diff;
+        for (const pt of points) pt.y += diff;
+      }
+
+      for (const e of enemies) {
+        if (e.dead) continue;
+        e.x += e.dir * e.speed * (delta / 16.7);
+        if (Math.abs(e.x - e.baseX) > e.range) e.dir *= -1;
+      }
+
+      const breakLifetime = 1200;
+      for (const p of platforms) {
+        if (p.type === "break" && p.breaking) {
+          p.breakTimer += delta;
+          if (p.breakTimer > breakLifetime) p.type = "deleted";
+        }
+      }
+
+      for (const pt of points) {
+        if (pt.collected) continue;
+        const overlap =
+          player.x < pt.x + 10 &&
+          player.x + player.width > pt.x &&
+          player.y < pt.y + 10 &&
+          player.y + player.height > pt.y;
+        if (overlap) {
+          pt.collected = true;
+          score += 25;
+        }
+      }
+
+      for (const e of enemies) {
+        if (e.dead) continue;
+
+        const ex1 = e.x - 10;
+        const ex2 = e.x + 10;
+        const ey1 = e.y - 10;
+        const ey2 = e.y + 10;
+
+        const plx1 = player.x;
+        const plx2 = player.x + player.width;
+        const ply1 = player.y;
+        const ply2 = player.y + player.height;
+
+        const overlap =
+          plx2 > ex1 && plx1 < ex2 && ply2 > ey1 && ply1 < ey2;
+
+        if (overlap) {
+          const playerIsFallingOnTop =
+            player.vy > 0 && (player.y + player.height) <= e.y + 6;
+
+          if (playerIsFallingOnTop) {
+            e.dead = true;
+            player.vy = player.jumpSpeed * 0.9;
+            score += 40;
+          } else {
+            gameOver();
+          }
+        }
+      }
+
+      if (player.y > H + 40) {
+        gameOver();
+      }
+
+      const minY = platforms.reduce((m, p) => Math.min(m, p.y), Infinity);
+      if (minY > -H) {
+        const newY = minY - (60 + Math.random() * 15);
+        const px = 30 + Math.random() * (W - 120);
+        addPlatform(px, newY);
+      }
+
+      platforms = platforms.filter(p => p.y < H + 60 && p.type !== "deleted");
+      enemies = enemies.filter(e => e.y < H + 60 && !e.dead);
+      points = points.filter(pt => pt.y < H + 60 && !pt.collected);
+
+      scoreDisplay.textContent = Math.floor(score);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+
+      for (const p of platforms) {
+        if (p.type === "deleted") continue;
+        if (p.type === "base") {
+          ctx.fillStyle = "#081c1a";
+          ctx.fillRect(p.x, p.y, p.width, p.height);
+          ctx.strokeStyle = "rgba(0,255,156,0.8)";
+        } else if (p.type === "break") {
+          ctx.fillStyle = "#120910";
+          ctx.fillRect(p.x, p.y, p.width, p.height);
+          ctx.strokeStyle = "#ff9cb3";
+        } else {
+          ctx.fillStyle = "#050b10";
+          ctx.fillRect(p.x, p.y, p.width, p.height);
+          ctx.strokeStyle = "rgba(0,255,156,0.6)";
+        }
+        ctx.lineWidth = 1;
+        ctx.strokeRect(p.x + 0.5, p.y + 0.5, p.width - 1, p.height - 1);
+      }
+
+      ctx.font = "14px PixelGrad, monospace";
+      for (const pt of points) {
+        if (pt.collected) continue;
+        ctx.fillStyle = "#00ff9c";
+        ctx.fillText("+", pt.x, pt.y);
+      }
+
+      for (const e of enemies) {
+        if (e.dead) continue;
+        ctx.fillStyle = "#ff4b6a";
+        ctx.font = "16px PixelGrad, monospace";
+        ctx.fillText("-", e.x - 5, e.y + 5);
+      }
+
+      ctx.fillStyle = "#e5fdf6";
+      ctx.font = "18px PixelGrad, monospace";
+      ctx.fillText("./", player.x, player.y + 14);
+    }
+
+    function gameOver() {
+      if (gameState === "over") return;
+      setGameState("over");
+      finalScoreEl.textContent = Math.floor(score);
+      overlay.classList.add("visible");
+    }
+
+    let lastTime = performance.now();
+    function loop(ts) {
+      const delta = ts - lastTime;
+      lastTime = ts;
+
+      if (gameState === "running") update(delta);
+      draw();
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+
+    window.addEventListener("keydown", (e) => {
+      keys[e.key] = true;
+      if (e.code === "Space" && gameState !== "running") resetGame();
+    });
+
+    window.addEventListener("keyup", (e) => {
+      keys[e.key] = false;
+    });
+
+    startBtn.addEventListener("click", () => {
+      if (gameState !== "running") resetGame();
+    });
+
+    restartBtn.addEventListener("click", () => resetGame());
+    overlayRestartBtn.addEventListener("click", () => resetGame());
+  </script>
+</body>
+</html>
